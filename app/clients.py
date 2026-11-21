@@ -76,3 +76,45 @@ def create_client(
     db.refresh(new_client)
 
     return new_client
+
+
+@router.get(
+    "",
+    response_model=list[schemas.ClientResponse]
+)
+def get_clients(
+    db: Db,
+    current_user: CurrentUser
+):
+    statement = select(models.Client).where(
+        models.Client.owner_id == current_user.id
+    )
+
+    clients = db.scalars(statement).all()
+
+    return clients
+
+
+@router.get(
+    "/{client_id}",
+    response_model=schemas.ClientResponse
+)
+def get_client(
+    client_id: int,
+    db: Db,
+    current_user: CurrentUser
+):
+    statement = select(models.Client).where(
+        models.Client.id == client_id,
+        models.Client.owner_id == current_user.id
+    )
+
+    client = db.scalar(statement)
+
+    if client is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Client not found"
+        )
+
+    return client
