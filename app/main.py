@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, EmailStr, Field
 from app.auth import router as auth_router
+from app.clients import router as clients_router
 
 
 app = FastAPI(
@@ -106,3 +107,4 @@ def get_project(project_id: int):
     }
 
 app.include_router(auth_router)
+app.include_router(clients_router)
