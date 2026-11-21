@@ -118,3 +118,68 @@ def get_client(
         )
 
     return client
+  
+
+
+@router.patch(
+    "/{client_id}",
+    response_model=schemas.ClientResponse
+)
+def update_client(
+    client_id: int,
+    payload: schemas.ClientUpdate,
+    db: Db,
+    current_user: CurrentUser
+):
+    statement = select(models.Client).where(
+        models.Client.id == client_id,
+        models.Client.owner_id == current_user.id
+    )
+
+    client = db.scalar(statement)
+
+    if client is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Client not found"
+        )
+
+    update_data = payload.model_dump(
+        exclude_unset=True,
+        exclude_none=True
+    )
+
+    for field, value in update_data.items():
+        setattr(client, field, value)
+
+    db.commit()
+    db.refresh(client)
+
+    return client
+  
+
+
+@router.delete(
+    "/{client_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_client(
+    client_id: int,
+    db: Db,
+    current_user: CurrentUser
+):
+    statement = select(models.Client).where(
+        models.Client.id == client_id,
+        models.Client.owner_id == current_user.id
+    )
+
+    client = db.scalar(statement)
+
+    if client is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Client not found"
+        )
+
+    db.delete(client)
+    db.commit()
