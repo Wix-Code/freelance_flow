@@ -185,7 +185,6 @@ def register(
 
     return new_user
 
-
 @router.post(
     "/login",
     response_model=schemas.TokenResponse
@@ -223,14 +222,12 @@ def login(
 
     return issue_token_pair(db, user)
 
-
 @router.get(
     "/me",
     response_model=schemas.UserResponse
 )
 def get_profile(user: CurrentUser):
     return user
-
 
 @router.post(
     "/refresh",
