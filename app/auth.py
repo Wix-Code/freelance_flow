@@ -271,7 +271,6 @@ def refresh_token(
 
     return issue_token_pair(db, user)
 
-
 @router.post(
     "/logout",
     response_model=schemas.MessageResponse
@@ -296,7 +295,6 @@ def logout(
     return {
         "message": "Refresh session ended"
     }
-
 
 @router.post(
     "/logout-all",
