@@ -309,7 +309,6 @@ def logout_all(
         "message": "All sessions revoked"
     }
 
-
 @router.post(
     "/change-password",
     response_model=schemas.MessageResponse

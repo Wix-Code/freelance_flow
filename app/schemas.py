@@ -63,3 +63,47 @@ class ResetPasswordRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+    
+
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field
+)
+
+class ClientCreate(BaseModel):
+    name: str = Field(
+        min_length=2,
+        max_length=100
+    )
+    email: EmailStr
+    company: str = Field(
+        min_length=2,
+        max_length=100
+    )
+
+class ClientUpdate(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100
+    )
+
+    email: EmailStr | None = None
+
+    company: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100
+    )
+
+class ClientResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    email: EmailStr
+    company: str
+    owner_id: int
