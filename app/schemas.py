@@ -1,5 +1,9 @@
 
 from datetime import datetime
+from decimal import Decimal
+from typing import Literal
+from datetime import date
+
 
 from pydantic import (
     BaseModel,
@@ -107,3 +111,133 @@ class ClientResponse(BaseModel):
     email: EmailStr
     company: str
     owner_id: int
+    
+
+
+ProjectStatus = Literal[
+    "pending",
+    "in_progress",
+    "completed",
+    "cancelled"
+]
+
+
+class ProjectCreate(BaseModel):
+    title: str = Field(
+        min_length=3,
+        max_length=250
+    )
+
+    description: str = Field(
+        min_length=2
+    )
+
+    budget: Decimal = Field(
+        gt=0,
+        max_digits=12,
+        decimal_places=2
+    )
+
+    client_id: int = Field(gt=0)
+
+    deadline: date | None = None
+
+
+class ProjectUpdate(BaseModel):
+    title: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=250
+    )
+
+    description: str | None = Field(
+        default=None,
+        min_length=2
+    )
+
+    budget: Decimal | None = Field(
+        default=None,
+        gt=0,
+        max_digits=12,
+        decimal_places=2
+    )
+
+    status: ProjectStatus | None = None
+
+    client_id: int | None = Field(
+        default=None,
+        gt=0
+    )
+
+    deadline: date | None = None
+
+
+class ProjectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: str
+    budget: Decimal
+    status: ProjectStatus
+    client_id: int
+    owner_id: int
+    deadline: date | None
+
+
+TaskStatus = Literal[
+    "pending",
+    "in_progress",
+    "completed"
+]
+
+TaskPriority = Literal[
+    "low",
+    "medium",
+    "high"
+]
+
+
+class TaskCreate(BaseModel):
+    title: str = Field(
+        min_length=3,
+        max_length=200
+    )
+
+    description: str | None = None
+
+    priority: TaskPriority = "medium"
+
+    due_date: datetime | None = None
+
+
+class TaskUpdate(BaseModel):
+    title: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=200
+    )
+
+    description: str | None = None
+
+    priority: TaskPriority | None = None
+
+    due_date: datetime | None = None
+
+
+class TaskStatusUpdate(BaseModel):
+    status: TaskStatus
+
+
+class TaskResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: str | None
+    status: TaskStatus
+    priority: TaskPriority
+    due_date: datetime | None
+    project_id: int
+    owner_id: int
+    created_at: datetime

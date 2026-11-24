@@ -1,5 +1,7 @@
 
 from datetime import datetime
+from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
@@ -7,7 +9,11 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    func,
+    func, Numeric, Text,
+    ForeignKeyConstraint,
+    Date,
+    CheckConstraint,
+    UniqueConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -63,6 +69,10 @@ class User(Base):
     )
     
     clients: Mapped[list["Client"]] = relationship(
+        back_populates="owner"
+    )
+    
+    projects: Mapped[list["Project"]] = relationship(
         back_populates="owner"
     )
 
@@ -169,3 +179,194 @@ class Client(Base):
     owner: Mapped["User"] = relationship(
         back_populates="clients"
     )
+    
+    projects: Mapped[list["Project"]] = relationship(
+        back_populates="client"
+    )
+    
+    
+class Project(Base):
+    __tablename__ = "projects"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "id",
+            "owner_id",
+            name="uq_projects_id_owner"
+        ),
+        CheckConstraint(
+            "budget > 0",
+            name="ck_projects_budget_positive"
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'in_progress', 'completed', 'cancelled')",
+            name="ck_projects_status"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+
+    title: Mapped[str] = mapped_column(
+        String(250),
+        nullable=False
+    )
+
+    description: Mapped[str] = mapped_column(
+        Text,
+        nullable=False
+    )
+
+    budget: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        nullable=False
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="pending",
+        nullable=False
+    )
+
+    deadline: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True
+    )
+
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    client_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "id",
+            "owner_id",
+            name="uq_projects_id_owner"
+        ),
+        CheckConstraint(
+            "budget > 0",
+            name="ck_projects_budget_positive"
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'in_progress', 'completed', 'cancelled')",
+            name="ck_projects_status"
+        ),
+        # The pair ensures the referenced client
+        # belongs to the same owner.
+        ForeignKeyConstraint(
+            ["client_id", "owner_id"],
+            ["clients.id", "clients.owner_id"],
+            name="fk_projects_client_owner"
+        ),
+        
+        UniqueConstraint(
+            "id",
+            "owner_id",
+            name="uq_projects_id_owner"
+        ),
+    )
+
+    owner: Mapped["User"] = relationship(
+        back_populates="projects"
+    )
+
+    client: Mapped["Client"] = relationship(
+        back_populates="projects",
+        foreign_keys=[client_id, owner_id],
+        overlaps="owner,projects"
+    )
+    
+    tasks: Mapped[list["Task"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        foreign_keys="[Task.project_id, Task.owner_id]",
+        overlaps="owner,project,tasks"
+    )
+    
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'in_progress', 'completed')",
+            name="ck_tasks_status"
+        ),
+        CheckConstraint(
+            "priority IN ('low', 'medium', 'high')",
+            name="ck_tasks_priority"
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "owner_id"],
+            ["projects.id", "projects.owner_id"],
+            name="fk_tasks_project_owner",
+            ondelete="CASCADE"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+
+    title: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="pending",
+        nullable=False
+    )
+
+    priority: Mapped[str] = mapped_column(
+        String(10),
+        default="medium",
+        nullable=False
+    )
+
+    due_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    project_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    owner_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    project: Mapped["Project"] = relationship(
+        back_populates="tasks",
+        foreign_keys=[project_id, owner_id],
+        overlaps="tasks"
+    )
+
