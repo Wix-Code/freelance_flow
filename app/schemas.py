@@ -241,3 +241,99 @@ class TaskResponse(BaseModel):
     project_id: int
     owner_id: int
     created_at: datetime
+
+
+InvoiceStatus = Literal[
+    "draft",
+    "issued",
+    "partially_paid",
+    "paid"
+]
+
+PaymentMethod = Literal[
+    "bank_transfer",
+    "cash",
+    "card",
+    "other"
+]
+
+
+class InvoiceItemCreate(BaseModel):
+    description: str = Field(
+        min_length=2,
+        max_length=300
+    )
+
+    quantity: int = Field(
+        gt=0,
+        le=10000
+    )
+
+    unit_price: Decimal = Field(
+        gt=0,
+        max_digits=12,
+        decimal_places=2
+    )
+
+
+class InvoiceCreate(BaseModel):
+    project_id: int = Field(gt=0)
+    due_date: date
+
+    items: list[InvoiceItemCreate] = Field(
+        min_length=1,
+        max_length=100
+    )
+
+
+class InvoiceItemResponse(BaseModel):
+    id: int
+    description: str
+    quantity: int
+    unit_price: Decimal
+    line_total: Decimal
+
+
+class PaymentCreate(BaseModel):
+    amount: Decimal = Field(
+        gt=0,
+        max_digits=16,
+        decimal_places=2
+    )
+
+    payment_method: PaymentMethod
+
+    reference: str | None = Field(
+        default=None,
+        max_length=100
+    )
+
+
+class PaymentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    invoice_id: int
+    amount: Decimal
+    payment_method: PaymentMethod
+    reference: str | None
+    paid_at: datetime
+
+
+class InvoiceResponse(BaseModel):
+    id: int
+    invoice_number: str
+    project_id: int
+    owner_id: int
+    currency: str
+    status: InvoiceStatus
+    due_date: date
+    issued_at: datetime | None
+    created_at: datetime
+
+    total_amount: Decimal
+    amount_paid: Decimal
+    balance_due: Decimal
+
+    items: list[InvoiceItemResponse]
+    payments: list[PaymentResponse]

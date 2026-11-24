@@ -370,3 +370,167 @@ class Task(Base):
         overlaps="tasks"
     )
 
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'issued', 'partially_paid', 'paid')",
+            name="ck_invoices_status"
+        ),
+        CheckConstraint(
+            "total_amount > 0",
+            name="ck_invoices_total_positive"
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "owner_id"],
+            ["projects.id", "projects.owner_id"],
+            name="fk_invoices_project_owner"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True
+    )
+
+    invoice_number: Mapped[str] = mapped_column(
+        String(40),
+        unique=True,
+        nullable=False
+    )
+
+    project_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    owner_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    currency: Mapped[str] = mapped_column(
+        String(3),
+        default="NGN",
+        nullable=False
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="draft",
+        nullable=False
+    )
+
+    total_amount: Mapped[Decimal] = mapped_column(
+        Numeric(16, 2),
+        nullable=False
+    )
+
+    due_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False
+    )
+
+    issued_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+
+class InvoiceItem(Base):
+    __tablename__ = "invoice_items"
+
+    __table_args__ = (
+        CheckConstraint(
+            "quantity > 0",
+            name="ck_invoice_items_quantity"
+        ),
+        CheckConstraint(
+            "unit_price > 0",
+            name="ck_invoice_items_price"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "invoices.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    description: Mapped[str] = mapped_column(
+        String(300),
+        nullable=False
+    )
+
+    quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    unit_price: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        nullable=False
+    )
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    __table_args__ = (
+        CheckConstraint(
+            "amount > 0",
+            name="ck_payments_amount_positive"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "invoices.id",
+            ondelete="RESTRICT"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    amount: Mapped[Decimal] = mapped_column(
+        Numeric(16, 2),
+        nullable=False
+    )
+
+    payment_method: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False
+    )
+
+    reference: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    paid_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
