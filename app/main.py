@@ -6,6 +6,7 @@ from app.clients import router as clients_router
 from app.projects import router as projects_router
 from app.tasks import router as tasks_router
 from app.invoices import router as invoices_router
+from app.dashboard import router as dashboard_router
 
 
 app = FastAPI(
@@ -115,3 +116,4 @@ app.include_router(clients_router)
 app.include_router(projects_router)
 app.include_router(tasks_router)
 app.include_router(invoices_router)
+app.include_router(dashboard_router)
